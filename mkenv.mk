@@ -8,14 +8,22 @@ else
 Q =
 endif
 
+#
+# System environment variable.
+# system app extension
+#
+ifeq ($(OS), Windows_NT)
+	HOSTOS	:= windows
+	EXTENSION ?= .exe
+else
+	ifneq (,$(findstring Linux, $(shell uname -a)))
+		HOSTOS	:= linux
+		EXTENSION ?= .elf
+	endif
+endif
+
 # define main target
 PROG ?= APP
-
-# system app extension
-EXTENSION ?= .elf
-
-# finally file type
-FINALLY_TYPE ?= .bin
 
 # define output dir
 BUILD ?= build
@@ -29,7 +37,7 @@ SED = sed
 PYTHON = python
 
 #gcc compiler select
-CROSS_COMPILE ?= arm-eabi-
+CROSS_COMPILE ?= #arm-eabi-
 CC	          = $(CROSS_COMPILE)gcc
 AS	          = $(CROSS_COMPILE)gcc -x assembler-with-cpp
 CXX 		  = $(CROSS_COMPILE)g++
@@ -42,7 +50,7 @@ STRIP 		  = $(CROSS_COMPILE)strip
 AR 			  = $(CROSS_COMPILE)ar
 
 #define
-DEFINES	+= -D__ARM32_ARCH__=5 -D__ARM926EJS__
+DEFINES		+= 
 
 # compiler set
 # Tune for Debugging or Optimization
@@ -59,104 +67,13 @@ CFLAGS		= -Wall -O3 -ffreestanding -std=gnu99 $(DEFINES)
 CXXFLAGS	= -Wall -O3 -ffreestanding -std=c++11 $(DEFINES)
 endif
 
-LDFLAGS		= -T arch/$(ARCH)/$(MACH)/f1c100s.ld -nostdlib
-MCFLAGS		= -march=armv5te -mtune=arm926ej-s -mfloat-abi=soft -marm -mno-thumb-interwork
+LDFLAGS		= #-T f1c100s.ld -nostdlib
+MCFLAGS		= #-march=armv5te -mtune=arm926ej-s -mfloat-abi=soft -marm -mno-thumb-interwork
 
-#include path
-INCDIRS	+= \
-	-Istd_lib/include \
-	-Iarch/arm32/include \
-	-Iarch/arm32/mach_f1c100s/driver/include \
-	-Iarch/arm32/mach_f1c100s/include \
-	-Iarch/arm32/mach_f1c100s/include/f1c100s \
-	-Iarch/arm32/mach_f1c100s/port/include \
 
-#library path
-LIBDIRS	+=
-
-#library
-LIBS += -lgcc
-
-#c source path
-SRCDIRS_C += 
-
-#base drivers src
-SRC_C += \
-	arch/arm32/lib/arm32.c \
-	arch/arm32/mach_f1c100s/sys-clock.c \
-	arch/arm32/mach_f1c100s/sys-dram.c \
-	arch/arm32/mach_f1c100s/sys-uart.c \
-	arch/arm32/mach_f1c100s/sys-copyself.c \
-	arch/arm32/mach_f1c100s/sys-spi-flash.c \
-	arch/arm32/mach_f1c100s/sys-mmu.c \
-	arch/arm32/mach_f1c100s/exception.c \
-	arch/arm32/mach_f1c100s/delay.c \
-
-# drivers src
-SRC_C += \
-	arch/arm32/mach_f1c100s/driver/gpio-f1c100s.c \
-	arch/arm32/mach_f1c100s/driver/pwm-f1c100s.c \
-	arch/arm32/mach_f1c100s/driver/reset-f1c100s.c \
-	arch/arm32/mach_f1c100s/driver/clk-f1c100s-pll.c \
-	arch/arm32/mach_f1c100s/driver/fb-f1c100s.c \
-	arch/arm32/mach_f1c100s/driver/irq_misc.c \
-	arch/arm32/mach_f1c100s/driver/wdog-f1c100s.c \
-	arch/arm32/mach_f1c100s/driver/uart-16550.c \
-	arch/arm32/mach_f1c100s/driver/spi-f1c100s.c \
-	arch/arm32/mach_f1c100s/driver/timer_f1c100s.c \
-	arch/arm32/mach_f1c100s/driver/sys_TPAdc.c \
-	arch/arm32/mach_f1c100s/driver/sys_sd.c \
-	arch/arm32/mach_f1c100s/driver/sys_tvd.c \
-	arch/arm32/mach_f1c100s/driver/sys_defe.c \
-	arch/arm32/mach_f1c100s/driver/sys_audio.c \
-	arch/arm32/mach_f1c100s/driver/usb_phy.c \
-
-# port src
-SRC_C += \
-	arch/arm32/mach_f1c100s/port/audio_port.c \
-	arch/arm32/mach_f1c100s/port/GPIO_port.c \
-	arch/arm32/mach_f1c100s/port/framebuffer_port.c \
-	arch/arm32/mach_f1c100s/port/PWM_port.c \
-	arch/arm32/mach_f1c100s/port/ROM_port.c \
-	arch/arm32/mach_f1c100s/port/timer_port.c \
-	arch/arm32/mach_f1c100s/port/touch_port.c \
-	arch/arm32/mach_f1c100s/port/uart_port.c \
-
-# C standard library src
-SRC_C += \
-	std_lib/malloc.c \
-	std_lib/stdio/printf.c \
-	std_lib/stdlib/strntoumax.c \
-	std_lib/stdlib/strtod.c \
-	std_lib/stdio/sscanf.c \
-	std_lib/stdio/vsscanf.c \
-	std_lib/string/strcpy.c \
-	std_lib/string/strcat.c \
-	std_lib/string/strcmp.c \
-	std_lib/string/strncmp.c \
-	std_lib/string/strlen.c \
-	std_lib/string/strstr.c \
-	std_lib/string/strrchr.c \
-	std_lib/string/strcpy.c \
-	std_lib/string/memcmp.c \
-	std_lib/math/floor.c \
-	std_lib/math/ceil.c \
-	std_lib/math/fabs.c \
-	std_lib/ctype/tolower.c \
-	std_lib/ctype/isupper.c \
-	std_lib/ctype/isspace.c \
-	std_lib/ctype/isdigit.c \
-
-#asm source files
-SRC_ASM += \
-	arch/arm32/mach_f1c100s/start.S \
-	arch/arm32/lib/memcpy.S \
-	arch/arm32/lib/memset.S \
-
-all: $(BUILD)/$(addprefix $(PROG), $(FINALLY_TYPE))
+all: $(BUILD)/$(addprefix $(PROG), $(EXTENSION))
 	$(ECHO) "<><><><><><>><><>><><><><><><><><><>><><><><><><>"
 	$(ECHO) make compile ok: $< 
-	$(Q)$(CP) $(BUILD)/$(addprefix $(PROG), $(FINALLY_TYPE)) arch/$(ARCH)/$(MACH)/tools/$(addprefix $(PROG), $(FINALLY_TYPE))
 	$(ECHO) $(shell date +%F%n%T)
 	$(ECHO) "<><><><><><>><><>><><><><><><><><><><><><><<><><>"
 
@@ -180,13 +97,13 @@ write:
 
 mktool:
 	cd tools/mksunxiboot && make
-	cd arch/$(ARCH)/$(MACH)/tools/mksunxi && make
+	cd tools/mksunxi && make
 
-PACK_TOOL := arch/$(ARCH)/$(MACH)/tools/mksunxi/mksunxi
+MKSUNXI		:= tools/mksunxi/mksunxi
 
 mkboot:
 	$(ECHO) Make header information for brom booting
-	@$(PACK_TOOL) $(BUILD)/$(addprefix $(PROG), .bin)
+	@$(MKSUNXI) $(BUILD)/$(addprefix $(PROG), .bin)
 
 test_makefile:
 	@echo $(SRC_C)
