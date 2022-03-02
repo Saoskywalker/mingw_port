@@ -1,8 +1,30 @@
 #include "audio_port.h"
-#include "sys_audio.h"
-#include "types_base.h"
-#include "io.h"
-#include "timer_f1c100s.h"
+
+//Buffer:
+//|-----------|-------------|
+//chunk-------pos---len-----|
+static  uint8_t  *audio_chunk; 
+static  uint32_t  audio_len = 0; 
+static  uint8_t  *audio_pos; 
+
+/* Audio Callback
+ * The audio function callback takes the following parameters: 
+ * stream: A pointer to the audio buffer to be filled 
+ * len: The length (in bytes) of the audio buffer 
+ * 
+*/
+static void fill_audio(void *udata, uint8_t *stream, int len)
+{
+	// SDL 2.0
+	SDL_memset(stream, 0, len);
+	if (audio_len == 0)
+		return;
+	len = (len > audio_len ? audio_len : len);
+
+	SDL_MixAudio(stream, audio_pos, len, SDL_MIX_MAXVOLUME);
+	audio_pos += len;
+	audio_len -= len;
+}
 
 static unsigned char _pcmFristOutput = 0;
 static uint32_t pcm_run_time = 0;
@@ -22,10 +44,18 @@ char MTF_audio_pcm_output_init(audio_pcm_dev *dev, audio_pcm_dev *dest)
 {
 	pcm_run_time = 0;
 	_pcmFristOutput = 0;
-	AUDIO_Init();
-	DMA_Init();
-	AVS_Time_Init();
-	AUDIO_PLAY_Init(dev->freq, dev->format, dev->channels);
+
+	/*audio HW dev init*/
+	dev->callback = fill_audio;
+	if (SDL_OpenAudio((SDL_AudioSpec *)&dev, NULL) < 0)
+	{
+		// printf("can't open audio.\n");
+		return -1;
+	}
+
+	// Play
+	SDL_PauseAudio(0);
+
 	return 0;
 }
 
@@ -33,39 +63,30 @@ char MTF_audio_pcm_output_exit(audio_pcm_dev *dev)
 {
 	pcm_run_time = 0;
 	_pcmFristOutput = 0;
-	S_BIT(DMA_Base_Address + 0x4, 1);
-	dmd_disable(0); //停止DMA
-	AVS_Time_Stop(AVS_TIME_0); //停止计时器
-	C_BIT(AUDIO_CODEC_CLK_REG,31);
+
 	return 0;
 }
 
 uint8_t MTF_audio_pcm_output_busy(audio_pcm_dev *dev)
 {
-	return !(read32(DMA_Base_Address+0x4)&0x2);
+	if (audio_len > 0) // Wait until finish
+		return 1;
+	else
+		return 0;
 }
 
 uint8_t MTF_audio_pcm_output(audio_pcm_dev *dev, uint8_t *stream, int len)
 {
-	if (_pcmFristOutput) //后续导入播放PCM
-	{
-		S_BIT(DMA_Base_Address + 0x4, 1); //清标记
-		dmd_disable(0);
-		SET_AUDIO_DMA_DATA(0, (unsigned int *)stream, len); //通过DMA导入至PCM
-	}
-	else //第一次导入播放PCM
-	{
-		_pcmFristOutput = 1;
-		SET_AUDIO_DMA_DATA(0, (unsigned int *)stream, len);
-		//时钟选通
-		S_BIT(AUDIO_CODEC_CLK_REG, 31);
-		//开始计时器
-		AVS_Time_Start(AVS_TIME_0);
-	}
+	/*output pcm data*/
+	// Set audio buffer (PCM data)
+	audio_chunk = stream;
+	// Audio buffer length
+	audio_len = len;
+	audio_pos = audio_chunk;
+
 	return 0;
 }
 
 void MTF_audio_vol(unsigned char i)
 {
-	AUDIO_VOL(i);
 }
