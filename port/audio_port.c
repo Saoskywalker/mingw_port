@@ -40,7 +40,7 @@ uint32_t MTF_audio_output_time_get(void)
 	return pcm_run_time; //软件方式计时
 }
 
-char MTF_audio_pcm_output_init(audio_pcm_dev *dev, audio_pcm_dev *dest)
+char MTF_audio_pcm_output_init(audio_pcm_dev_type *dev, audio_pcm_dev_type *dest)
 {
 	pcm_run_time = 0;
 	_pcmFristOutput = 0;
@@ -59,7 +59,7 @@ char MTF_audio_pcm_output_init(audio_pcm_dev *dev, audio_pcm_dev *dest)
 	return 0;
 }
 
-char MTF_audio_pcm_output_exit(audio_pcm_dev *dev)
+char MTF_audio_pcm_output_exit(audio_pcm_dev_type *dev)
 {
 	pcm_run_time = 0;
 	_pcmFristOutput = 0;
@@ -67,7 +67,7 @@ char MTF_audio_pcm_output_exit(audio_pcm_dev *dev)
 	return 0;
 }
 
-uint8_t MTF_audio_pcm_output_busy(audio_pcm_dev *dev)
+uint8_t MTF_audio_pcm_output_busy(audio_pcm_dev_type *dev)
 {
 	if (audio_len > 0) // Wait until finish
 		return 1;
@@ -75,7 +75,7 @@ uint8_t MTF_audio_pcm_output_busy(audio_pcm_dev *dev)
 		return 0;
 }
 
-uint8_t MTF_audio_pcm_output(audio_pcm_dev *dev, uint8_t *stream, int len)
+uint8_t MTF_audio_pcm_output(audio_pcm_dev_type *dev, uint8_t *stream, int len)
 {
 	/*output pcm data*/
 	// Set audio buffer (PCM data)
