@@ -36,12 +36,12 @@ uint8_t MTF_fb_write_back_state(void) //查询完成状态
     // return fb_f1c100s_write_back_state();
 }
 
-void MTF_fb_set_backlight(framebuffer_dev *fb, int32_t brightness) //设置背光
+void MTF_fb_set_backlight(framebuffer_dev_type *fb, int32_t brightness) //设置背光
 {
     fb_f1c100s_setbl(&fb_f1c100s_pData, brightness); //设置背光
 }
 
-render_dev_type *MTF_fb_render_create(framebuffer_dev *fb, uint32_t width, uint32_t height)
+render_dev_type *MTF_fb_render_create(framebuffer_dev_type *fb, uint32_t width, uint32_t height)
 {
     
 	render_dev_type * render;
@@ -105,7 +105,7 @@ void MTF_fb_destroy(render_dev_type * render)
     }
 }
 
-void MTF_fb_present(framebuffer_dev *fb, render_dev_type * render)
+void MTF_fb_present(framebuffer_dev_type *fb, render_dev_type * render)
 {
 #if DIS_BUF_LEVEL == 3
     fb_f1c100s_present(&fb_f1c100s_pData, render->pixels, render->pixlen); //三级缓冲, 缩放显示时不能用使用此方法
@@ -117,7 +117,7 @@ void *MTF_fb_get_dis_mem(render_dev_type *render) //获取可直接使用的显�
     return render->pixels;
 }
 
-void MTF_fb_TV_input(framebuffer_dev *fb, uint8_t state, uint8_t contrast, uint8_t bright, uint8_t saturation, uint8_t hue) //是否开启AV输入
+void MTF_fb_TV_input(framebuffer_dev_type *fb, uint8_t state, uint8_t contrast, uint8_t bright, uint8_t saturation, uint8_t hue) //是否开启AV输入
 {
 //当f1c100s开启AV输入时, 调用fb_f1c100s_change_hw会造成配置错误(无法显示), 
 //当f1c100s开启TV时禁止再调用fb_f1c100s_change_hw
@@ -158,7 +158,7 @@ void MTF_fb_TV_input(framebuffer_dev *fb, uint8_t state, uint8_t contrast, uint8
     fb->tv_input_flag = state;
 }
 
-void MTF_fb_scale(framebuffer_dev *fb, uint8_t state, void *data) //是否开启硬件缩放
+void MTF_fb_scale(framebuffer_dev_type *fb, uint8_t state, void *data) //是否开启硬件缩放
 {
     //f1c100s缩放由硬件运算后直接显示, 和cvbs同层, 两者不能同时使用
 	defe_buf_addr = (u32 *)data;
@@ -173,7 +173,7 @@ void MTF_fb_scale(framebuffer_dev *fb, uint8_t state, void *data) //是否开启
     fb->scale_flag = 1; //开启缩放
 }
 
-void MTF_fb_init(framebuffer_dev *fb)
+void MTF_fb_init(framebuffer_dev_type *fb)
 {   
     //获取液晶参数
     fb->xres = LCD_X_PIXEL;
@@ -225,7 +225,7 @@ void MTF_fb_init(framebuffer_dev *fb)
     fb_f1c100s_init(&fb_f1c100s_pData);
 }
 
-void MTF_fb_exit(framebuffer_dev *fb)
+void MTF_fb_exit(framebuffer_dev_type *fb)
 {
 
 }
