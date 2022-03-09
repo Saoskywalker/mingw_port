@@ -47,7 +47,7 @@ char MTF_audio_pcm_output_init(audio_pcm_dev_type *dev, audio_pcm_dev_type *dest
 
 	/*audio HW dev init*/
 	dev->callback = fill_audio;
-	if (SDL_OpenAudio((SDL_AudioSpec *)&dev, NULL) < 0)
+	if (SDL_OpenAudio((SDL_AudioSpec *)dev, NULL) < 0)
 	{
 		// printf("can't open audio.\n");
 		return -1;

@@ -62,14 +62,29 @@ CFLAGS		= -g -ggdb -Wall -O0 -ffreestanding -std=gnu99 $(DEFINES)
 CXXFLAGS	= -g -ggdb -Wall -O0 -ffreestanding -std=c++11 $(DEFINES)
 else
 PROG = main_release
-ASFLAGS		= -Wall -O3 -ffreestanding -std=gnu99 $(DEFINES)
-CFLAGS		= -Wall -O3 -ffreestanding -std=gnu99 $(DEFINES)
-CXXFLAGS	= -Wall -O3 -ffreestanding -std=c++11 $(DEFINES)
+ASFLAGS		= -Wall -Os -ffreestanding -std=gnu99 $(DEFINES)
+CFLAGS		= -Wall -Os -ffreestanding -std=gnu99 $(DEFINES)
+CXXFLAGS	= -Wall -Os -ffreestanding -std=c++11 $(DEFINES)
 endif
 
 LDFLAGS		= #-T f1c100s.ld -nostdlib
 MCFLAGS		= #-march=armv5te -mtune=arm926ej-s -mfloat-abi=soft -marm -mno-thumb-interwork
 
+#include path
+INCDIRS	+= \
+	-Iarch/x64/public/include \
+
+#library path
+LIBDIRS	+=
+
+#library
+LIBS += -lgcc -lmingw32 -lSDL2main -lSDL2
+
+#c source path
+SRCDIRS_C += 
+
+#base drivers src
+SRC_C += \
 
 all: $(BUILD)/$(addprefix $(PROG), $(EXTENSION))
 	$(ECHO) "<><><><><><>><><>><><><><><><><><><>><><><><><><>"
