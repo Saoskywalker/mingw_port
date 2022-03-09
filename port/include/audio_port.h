@@ -4,6 +4,8 @@
 #include "types_base.h"
 #include <SDL2/SDL.h>
 
+#define AUDIO_S24SYS 0 //SDL2不支持
+
 typedef SDL_AudioSpec audio_pcm_dev_type;
 
 void MTF_audio_time(void);
