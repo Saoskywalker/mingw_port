@@ -5,7 +5,6 @@
 
 //目前F1C100S配置威1级缓冲
 #define DIS_BUF_LEVEL 1 //显示缓存级数: 1~3
-static char _use_vram_flag = 0;
 
 //set '1' to choose a type of file to play
 #define LOAD_BGRA    1
@@ -16,25 +15,43 @@ static char _use_vram_flag = 0;
 static render_dev_type *SDL_buf = NULL;
 static SDL_Window *screen = NULL;
 static SDL_Renderer *sdlRenderer = NULL;
+static SDL_Texture *sdlTexture = NULL;
+static int *screen_w = NULL, *screen_h = NULL;
+
+//Refresh Event
+#define REFRESH_EVENT  (SDL_USEREVENT + 1)
+ 
+static int thread_exit=0;
+ int sdl_event_get(void *opaque)
+{
+    SDL_Event event;
+    // while (thread_exit == 0)
+    {
+
+        // event.type = REFRESH_EVENT;
+        // SDL_PushEvent(&event);
+        // SDL_Delay(40);
+
+        // Wait
+        SDL_WaitEventTimeout(&event, 1);
+
+        if (event.type == SDL_WINDOWEVENT)
+        {
+            // If Resize
+            SDL_GetWindowSize(screen, screen_w, screen_h);
+        }
+        else if (event.type == SDL_QUIT)
+        {
+            thread_exit = 1;
+            return 1;
+            // break;
+        }
+    }
+    return 0;
+}
+
 static int _SDL_flush(void *data)
 {
-    uint32_t pixformat = 0;
-#if LOAD_BGRA
-    // Note: ARGB8888 in "Little Endian" system stores as B|G|R|A
-    pixformat = SDL_PIXELFORMAT_ARGB8888;
-#elif LOAD_RGB24
-    pixformat = SDL_PIXELFORMAT_RGB888;
-#elif LOAD_BGR24
-    pixformat = SDL_PIXELFORMAT_BGR888;
-#elif LOAD_YUV420P
-    // IYUV: Y + U + V  (3 planes)
-    // YV12: Y + V + U  (3 planes)
-    pixformat = SDL_PIXELFORMAT_IYUV;
-#endif
-
-    SDL_Texture *sdlTexture = SDL_CreateTexture(sdlRenderer, pixformat, SDL_TEXTUREACCESS_STREAMING, SDL_buf->width, SDL_buf->height);
-    
-
     // Bit per Pixel
 #if LOAD_BGRA
     const int bpp = 32;
@@ -55,52 +72,33 @@ static int _SDL_flush(void *data)
     {
         if (SDL_buf != NULL)
         {
-            // Wait
-            SDL_WaitEvent(&event);
 
-            if (event.type == SDL_WINDOWEVENT)
+            //  if(event.type==REFRESH_EVENT)
             {
-                // If Resize
-                SDL_GetWindowSize(screen, &screen_w, &screen_h);
-            }
-            else if (event.type == SDL_QUIT)
-            {
-            }
-            else
-            {
-                if (event.type == REFRESH_EVENT)
-                {
-                    // if (fread(SDL_buf->pixels, 1, SDL_buf->width*SDL_buf->height*bpp/8, fp) != SDL_buf->width*SDL_buf->height*bpp/8){
-                    // 	// Loop
-                    // 	fseek(fp, 0, SEEK_SET);
-                    // 	fread(SDL_buf->pixels, 1, SDL_buf->width*SDL_buf->height*bpp/8, fp);
-                    // }
-
 #if LOAD_BGRA
-                    // We don't need to change Endian
-                    // Because input BGRA pixel data(B|G|R|A) is same as ARGB8888 in Little Endian (B|G|R|A)
-                    SDL_UpdateTexture(sdlTexture, NULL, SDL_buf->pixels, SDL_buf->width * 4);
+                // We don't need to change Endian
+                // Because input BGRA pixel data(B|G|R|A) is same as ARGB8888 in Little Endian (B|G|R|A)
+                SDL_UpdateTexture(sdlTexture, NULL, SDL_buf->pixels, SDL_buf->width * 4);
 #elif LOAD_RGB24 | LOAD_BGR24
-                    // change 24bit to 32 bit
-                    // and in Windows we need to change Endian
-                    CONVERT_24to32(SDL_buf->pixels, buffer_convert, SDL_buf->width, SDL_buf->height);
-                    SDL_UpdateTexture(sdlTexture, NULL, buffer_convert, SDL_buf->width * 4);
+                // change 24bit to 32 bit
+                // and in Windows we need to change Endian
+                CONVERT_24to32(SDL_buf->pixels, buffer_convert, SDL_buf->width, SDL_buf->height);
+                SDL_UpdateTexture(sdlTexture, NULL, buffer_convert, SDL_buf->width * 4);
 #elif LOAD_YUV420P
-                    SDL_UpdateTexture(sdlTexture, NULL, SDL_buf->pixels, SDL_buf->width);
+                SDL_UpdateTexture(sdlTexture, NULL, SDL_buf->pixels, SDL_buf->width);
 #endif
 
-                    // FIX: If window is resize
-                    sdlRect.x = 0;
-                    sdlRect.y = 0;
-                    sdlRect.w = screen_w;
-                    sdlRect.h = screen_h;
+                // FIX: If window is resize
+                sdlRect.x = 0;
+                sdlRect.y = 0;
+                sdlRect.w = *screen_w;
+                sdlRect.h = *screen_h;
 
-                    SDL_RenderClear(sdlRenderer);
-                    SDL_RenderCopy(sdlRenderer, sdlTexture, NULL, &sdlRect);
-                    SDL_RenderPresent(sdlRenderer);
-                    // Delay 16ms
-                    SDL_Delay(16);
-                }
+                SDL_RenderClear(sdlRenderer);
+                SDL_RenderCopy(sdlRenderer, sdlTexture, NULL, &sdlRect);
+                SDL_RenderPresent(sdlRenderer);
+                // Delay 16ms
+                // SDL_Delay(16);
             }
         }
 
@@ -126,11 +124,11 @@ void MTF_fb_set_backlight(framebuffer_dev_type *fb, int32_t brightness) //设置
 
 render_dev_type *MTF_fb_render_create(framebuffer_dev_type *fb, uint32_t width, uint32_t height)
 {
-    
 	render_dev_type * render;
 	void * pixels;
     size_t pixlen = width * height * fb->bits_per_pixel / 8;
 
+    /*****MTF port render create******/
     render = malloc(sizeof(render_dev_type));
     if (render == NULL)
         return NULL;
@@ -152,20 +150,36 @@ render_dev_type *MTF_fb_render_create(framebuffer_dev_type *fb, uint32_t width, 
 	render->priv = NULL;
 
     SDL_buf = render;
+    /******************************/
 
+    /*****sdlTexture create******/
+    uint32_t pixformat = 0;
+    
+#if LOAD_BGRA
+    // Note: ARGB8888 in "Little Endian" system stores as B|G|R|A
+    pixformat = SDL_PIXELFORMAT_ARGB8888;
+#elif LOAD_RGB24
+    pixformat = SDL_PIXELFORMAT_RGB888;
+#elif LOAD_BGR24
+    pixformat = SDL_PIXELFORMAT_BGR888;
+#elif LOAD_YUV420P
+    // IYUV: Y + U + V  (3 planes)
+    // YV12: Y + V + U  (3 planes)
+    pixformat = SDL_PIXELFORMAT_IYUV;
+#endif
+
+    sdlTexture = SDL_CreateTexture(sdlRenderer, pixformat, SDL_TEXTUREACCESS_STREAMING, SDL_buf->width, SDL_buf->height);
+    /**************************/
+    
     return render;
 }
 
 void MTF_fb_destroy(render_dev_type * render)
 {
+    SDL_DestroyTexture(sdlTexture);
 	if(render)
 	{
-#if DIS_BUF_LEVEL == 1
-        if (render->pixels != fb_f1c100s_pData.vram[0] || render->pixels != fb_f1c100s_pData.vram[1])
-            dma_free_coherent(render->pixels);
-#else
-        dma_free_coherent(render->pixels);
-#endif
+        free(render->pixels);
         free(render);
     }
 }
@@ -173,7 +187,7 @@ void MTF_fb_destroy(render_dev_type * render)
 void MTF_fb_present(framebuffer_dev_type *fb, render_dev_type * render)
 {
 #if DIS_BUF_LEVEL == 3
-    fb_f1c100s_present(&fb_f1c100s_pData, render->pixels, render->pixlen); //三级缓冲, 缩放显示时不能用使用此方法
+    // fb_f1c100s_present(&fb_f1c100s_pData, render->pixels, render->pixlen); //三级缓冲, 缩放显示时不能用使用此方法
 #endif
 }
 
@@ -194,6 +208,8 @@ void MTF_fb_scale(framebuffer_dev_type *fb, uint8_t state, void *data) //是否�
 void MTF_fb_init(framebuffer_dev_type *fb)
 {   
     //获取液晶参数
+    screen_w = (int *)&(fb->xres);
+    screen_h = (int *)&(fb->yres);
     fb->xres = LCD_X_PIXEL;
     fb->yres = LCD_Y_PIXEL;
     fb->xres_virtual = fb->xres;
@@ -217,18 +233,20 @@ void MTF_fb_init(framebuffer_dev_type *fb)
     fb->write_back_addr = NULL; //回写显存地址
 
     // SDL 2.0 Support for multiple windows
-    screen = SDL_CreateWindow("Simplest Video Play SDL2", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-                              (int)fb->xres, (int)fb->yres, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+    screen = SDL_CreateWindow("MTF Sagittarius", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+                              *screen_w, *screen_h, SDL_WINDOW_OPENGL);
     if (!screen)
     {
         printf("SDL: could not create window - exiting:%s\n", SDL_GetError());
-        return -1;
+        return;
     }
-    *sdlRenderer = SDL_CreateRenderer(screen, -1, 0);
+    sdlRenderer = SDL_CreateRenderer(screen, -1, 0);
 
-    SDL_CreateThread(_SDL_flush, NULL, NULL); //创建线程, 用于更新显示
+    SDL_CreateThread(_SDL_flush, NULL, NULL); //创建线程, 用于定时更新显示
 }
 
 void MTF_fb_exit(framebuffer_dev_type *fb)
 {
+    SDL_DestroyRenderer(sdlRenderer);
+    SDL_DestroyWindow(screen);
 }
