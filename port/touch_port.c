@@ -1,14 +1,23 @@
 #include "touch_port.h"
-#include "sys_TPAdc.h"
+#include "MTF_io.h"
+#include "system_port.h"
 
-char touch_init(void) //初始化触摸屏控制器
+#define DEBUG_TOUCH(...) printf(__VA_ARGS__)
+
+//SDL相关在SDL_Init统一初始化
+uint8_t touch_init(void) //初始化触摸屏控制器
 {
-    return (char)F1C_TP_Init();
+    return 0;
 }
 
-char touch_exit(void); //移除触摸屏控制器
-
-uint8_t touch_scan(uint8_t i) //扫描触摸屏
+uint8_t touch_exit(void) //移除触摸屏控制器
 {
-    return F1C_TP_Scan(i);
+    return 0;
+}
+
+uint8_t touch_scan(int *x, int *y, uint8_t target_num, uint8_t *result_num) //扫描触摸屏
+{
+    sdl_touch(x, y, target_num, result_num);
+    // return 1; //失败
+    return 0; //成功
 }

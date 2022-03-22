@@ -2,6 +2,10 @@
 #include "LCD_parameter.h"
 #include "malloc.h"
 #include <SDL2/SDL.h>
+#include "MTF_io.h"
+#include "system_port.h"
+
+#define DEBUG_FRAMEBUFFER(...) //printf(__VA_ARGS__)
 
 //目前F1C100S配置威1级缓冲
 #define DIS_BUF_LEVEL 1 //显示缓存级数: 1~3
@@ -18,57 +22,25 @@ static SDL_Renderer *sdlRenderer = NULL;
 static SDL_Texture *sdlTexture = NULL;
 static int *screen_w = NULL, *screen_h = NULL;
 
-//Refresh Event
-#define REFRESH_EVENT  (SDL_USEREVENT + 1)
- 
-static int thread_exit=0;
- int sdl_event_get(void *opaque)
-{
-    SDL_Event event;
-    // while (thread_exit == 0)
-    {
-
-        // event.type = REFRESH_EVENT;
-        // SDL_PushEvent(&event);
-        // SDL_Delay(40);
-
-        // Wait
-        SDL_WaitEventTimeout(&event, 1);
-
-        if (event.type == SDL_WINDOWEVENT)
-        {
-            // If Resize
-            SDL_GetWindowSize(screen, screen_w, screen_h);
-        }
-        else if (event.type == SDL_QUIT)
-        {
-            thread_exit = 1;
-            return 1;
-            // break;
-        }
-    }
-    return 0;
-}
-
-static int _SDL_flush(void *data)
+ int _SDL_flush(void *data)
 {
     // Bit per Pixel
-#if LOAD_BGRA
-    const int bpp = 32;
-#elif LOAD_RGB24 | LOAD_BGR24
-    const int bpp = 24;
-#elif LOAD_YUV420P
-    const int bpp = 12;
-#endif
+// #if LOAD_BGRA
+//     const int bpp = 32;
+// #elif LOAD_RGB24 | LOAD_BGR24
+//     const int bpp = 24;
+// #elif LOAD_YUV420P
+//     const int bpp = 12;
+// #endif
 
 #if LOAD_RGB24 | LOAD_BGR24
     unsigned char buffer_convert[pixel_w * pixel_h * 4];
 #endif
 
     SDL_Rect sdlRect;
-    SDL_Event event;
+    // SDL_Event event;
 
-    while (1)
+    while (system_get_state() == 0)
     {
         if (SDL_buf != NULL)
         {
@@ -205,7 +177,7 @@ void MTF_fb_scale(framebuffer_dev_type *fb, uint8_t state, void *data) //是否�
     fb->scale_flag = 1; //开启缩放
 }
 
-void MTF_fb_init(framebuffer_dev_type *fb)
+uint8_t MTF_fb_init(framebuffer_dev_type *fb)
 {   
     //获取液晶参数
     screen_w = (int *)&(fb->xres);
@@ -232,21 +204,27 @@ void MTF_fb_init(framebuffer_dev_type *fb)
     fb->tv_input_flag = 0; //不使用cvbs输入
     fb->write_back_addr = NULL; //回写显存地址
 
+    //SDL相关在SDL_Init统一初始化
+    
     // SDL 2.0 Support for multiple windows
     screen = SDL_CreateWindow("MTF Sagittarius", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
                               *screen_w, *screen_h, SDL_WINDOW_OPENGL);
     if (!screen)
     {
-        printf("SDL: could not create window - exiting:%s\n", SDL_GetError());
-        return;
+        DEBUG_FRAMEBUFFER("SDL: could not create window - exiting:%s\n", SDL_GetError());
+        return 2;
     }
     sdlRenderer = SDL_CreateRenderer(screen, -1, 0);
 
     SDL_CreateThread(_SDL_flush, NULL, NULL); //创建线程, 用于定时更新显示
+
+    return 0;
 }
 
-void MTF_fb_exit(framebuffer_dev_type *fb)
+uint8_t MTF_fb_exit(framebuffer_dev_type *fb)
 {
     SDL_DestroyRenderer(sdlRenderer);
     SDL_DestroyWindow(screen);
+
+    return 0;
 }

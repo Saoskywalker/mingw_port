@@ -6,6 +6,11 @@
 
 #include "MTF_io.h"
 
+unsigned char diskCheckBusy(void)
+{
+	return 0;
+}
+
 mFILE *cache_open(const char *filename, const char *mode)
 {
    return fopen(filename, mode);

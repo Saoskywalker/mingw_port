@@ -8,7 +8,9 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "types_plus.h"
-#include <gpio-f1c100s.h>
+#include "MTF_io.h"
+
+#define DEBUG_GPIO(...) //printf(__VA_ARGS__)
 
 /** @addtogroup GPIO
   * @{
@@ -18,13 +20,43 @@
 /** @defgroup GPIO_Exported_Types GPIO Exported Types
   * @{
   */
-typedef gpio_port_t MTF_GPIO_PORT;
-#define MTF_GPIO_A ((MTF_GPIO_PORT *)&GPIO_PA)
-#define MTF_GPIO_B ((MTF_GPIO_PORT *)&GPIO_PB)
-#define MTF_GPIO_C ((MTF_GPIO_PORT *)&GPIO_PC)
-#define MTF_GPIO_D ((MTF_GPIO_PORT *)&GPIO_PD)
-#define MTF_GPIO_E ((MTF_GPIO_PORT *)&GPIO_PE)
-#define MTF_GPIO_F ((MTF_GPIO_PORT *)&GPIO_PF)
+
+/** 
+  * @brief  GPIO Bit SET and Bit RESET enumeration 
+  */
+typedef enum
+{
+  MTF_PIN_RESET = 0,
+  MTF_PIN_SET
+}MTF_GPIO_State;
+
+typedef enum
+{
+  GPIO_IN = 0,
+  GPIO_OUT
+}gpio_direction_t;
+
+typedef struct
+{
+  gpio_direction_t direction;
+  uint8_t function;
+  MTF_GPIO_State input;
+  MTF_GPIO_State output;
+}MTF_GPIO_PORT;
+
+extern MTF_GPIO_PORT GPIO_PA[16];
+extern MTF_GPIO_PORT GPIO_PB[16];
+extern MTF_GPIO_PORT GPIO_PC[16];
+extern MTF_GPIO_PORT GPIO_PD[16];
+extern MTF_GPIO_PORT GPIO_PE[16];
+extern MTF_GPIO_PORT GPIO_PF[16];
+
+#define MTF_GPIO_A ((MTF_GPIO_PORT *)&GPIO_PA[0])
+#define MTF_GPIO_B ((MTF_GPIO_PORT *)&GPIO_PB[0])
+#define MTF_GPIO_C ((MTF_GPIO_PORT *)&GPIO_PC[0])
+#define MTF_GPIO_D ((MTF_GPIO_PORT *)&GPIO_PD[0])
+#define MTF_GPIO_E ((MTF_GPIO_PORT *)&GPIO_PE[0])
+#define MTF_GPIO_F ((MTF_GPIO_PORT *)&GPIO_PF[0])
 
 /** 
   * @brief GPIO Init structure definition  
@@ -47,14 +79,6 @@ typedef struct
                             This parameter can be a value of @ref GPIO_Alternate_function_selection */
 }MTF_GPIO_Type;
 
-/** 
-  * @brief  GPIO Bit SET and Bit RESET enumeration 
-  */
-typedef enum
-{
-  MTF_PIN_RESET = 0,
-  MTF_PIN_SET
-}MTF_GPIO_State;
 /**
   * @}
   */
@@ -168,22 +192,22 @@ void  MTF_GPIO_DeInit(MTF_GPIO_PORT  *GPIOx, uint32_t GPIO_Pin);
 /* IO operation functions *****************************************************/
 static __INLINE MTF_GPIO_State MTF_GPIO_ReadPin(MTF_GPIO_PORT* GPIOx, uint16_t GPIO_Pin)
 {
-    return gpio_f1c100s_get_value(GPIOx, GPIO_Pin);
+    return GPIOx[GPIO_Pin].input;
 }
 
 static __INLINE void MTF_GPIO_WritePin(MTF_GPIO_PORT* GPIOx, uint16_t GPIO_Pin, MTF_GPIO_State PinState)
 {
-    gpio_f1c100s_set_value(GPIOx, GPIO_Pin, PinState);
+  GPIOx[GPIO_Pin].output = PinState;
 }
 
 static __INLINE void MTF_GPIO_TogglePin(MTF_GPIO_PORT* GPIOx, uint16_t GPIO_Pin)
 {
-    gpio_f1c100s_set_value(GPIOx, GPIO_Pin, !gpio_f1c100s_get_value(GPIOx, GPIO_Pin));
+  GPIOx[GPIO_Pin].output = !GPIOx[GPIO_Pin].output;
 }
 
 static __INLINE void MTF_GPIO_SetDir(MTF_GPIO_PORT* GPIOx, uint16_t GPIO_Pin, gpio_direction_t i)
 {
-    gpio_f1c100s_set_dir(GPIOx, GPIO_Pin, i);
+  GPIOx[GPIO_Pin].direction = i;
 }
 
 HAL_StatusTypeDef MTF_GPIO_LockPin(MTF_GPIO_PORT* GPIOx, uint16_t GPIO_Pin);

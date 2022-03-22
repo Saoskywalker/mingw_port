@@ -8,14 +8,13 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "types_plus.h"
-#include "uart-16550.h"
 
 /** @addtogroup UART
   * @{
   */
-#define MTF_UART_0 UART0
-#define MTF_UART_1 UART1
-#define MTF_UART_2 UART2
+#define MTF_UART_0 0
+#define MTF_UART_1 1
+#define MTF_UART_2 2
 
 /* Exported types ------------------------------------------------------------*/
 /** @defgroup UART_Exported_Types UART Exported Types
@@ -220,6 +219,7 @@ typedef struct
 
 /* Initialization and de-initialization functions  ****************************/
 HAL_StatusTypeDef MTF_UART_Init(MTF_HandleDef *huart);
+HAL_StatusTypeDef MTF_UART_exit(MTF_HandleDef *huart);
 HAL_StatusTypeDef MTF_UART_Reset(MTF_HandleDef *huart);
 
 /**
@@ -246,7 +246,7 @@ uint8_t MTF_UART_Transmit_FIFO_Count(MTF_HandleDef *huart);
 
 static __INLINE uint8_t MTF_UART_Receive_FIFO_Count(MTF_HandleDef *huart)
 {
-  return uart_16550_rec_fifo_cnt(huart->uart);
+  return 0; //uart_16550_rec_fifo_cnt(huart->uart);
 }
 
 void MTF_UART_IRQHandler(MTF_HandleDef *huart);

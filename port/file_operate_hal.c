@@ -1,12 +1,10 @@
-#include "file_operate.h" 
+#include "file_operate_hal.h" 
 #include "MTF_io.h"
 #include "malloc.h"		  
 #include "string.h"
 
 // #define file_operate_debug(...) printf(__VA_ARGS__)
 #define file_operate_debug(...)
-
-static FILINFO fileinfo;	//文件信息
 
 //为磁盘注册工作区	 
 //path:磁盘路径，比如"0:"、"1:"
@@ -19,42 +17,8 @@ static FILINFO fileinfo;	//文件信息
 
 //打读取文件夹
 //返回值:执行结果
-u8 mf_readdir(void)
+uint8_t MTF_read_dir(void)
 {
-	DIR dir; //目录
-	u8 res;
-	char *fn;			 
-#if _USE_LFN
- 	fileinfo.lfsize = _MAX_LFN * 2 + 1;
-	fileinfo.lfname = malloc(fileinfo.lfsize);
-#endif		  
-	res=f_readdir(&dir,&fileinfo);//读取一个文件的信息
-	if(res!=FR_OK||fileinfo.fname[0]==0)
-	{
-		free(fileinfo.lfname);
-		return res;//读完了.
-	}
-#if _USE_LFN
-	fn=*fileinfo.lfname ? fileinfo.lfname : fileinfo.fname;
-#else
-	fn=fileinfo.fname;;
-#endif	
-	file_operate_debug("\r\n DIR info:\r\n");
-
-	file_operate_debug("dir.id:%d\r\n",dir.id);
-	file_operate_debug("dir.index:%d\r\n",dir.index);
-	file_operate_debug("dir.sclust:%d\r\n",dir.sclust);
-	file_operate_debug("dir.clust:%d\r\n",dir.clust);
-	file_operate_debug("dir.sect:%d\r\n",dir.sect);	  
-
-	file_operate_debug("\r\n");
-	file_operate_debug("File Name is:%s\r\n",fn);
-	file_operate_debug("File Size is:%d\r\n",fileinfo.fsize);
-	file_operate_debug("File data is:%d\r\n",fileinfo.fdate);
-	file_operate_debug("File time is:%d\r\n",fileinfo.ftime);
-	file_operate_debug("File Attr is:%d\r\n",fileinfo.fattrib);
-	file_operate_debug("\r\n");
-	free(fileinfo.lfname);
 	return 0;
 }			 
 
@@ -63,35 +27,7 @@ u8 mf_readdir(void)
  //返回值:执行结果
 u8 mf_scan_files(u8 * path)
 {
-	DIR dir; //目录
-	FRESULT res;	  
-    char *fn;   /* This function is assuming non-Unicode cfg. */
-#if _USE_LFN
- 	fileinfo.lfsize = _MAX_LFN * 2 + 1;
-	fileinfo.lfname = malloc(fileinfo.lfsize);
-#endif		  
-
-    res = f_opendir(&dir,(const TCHAR*)path); //打开一个目录
-    if (res == FR_OK) 
-	{	
-		file_operate_debug("\r\n"); 
-		while(1)
-		{
-	        res = f_readdir(&dir, &fileinfo);                   //读取目录下的一个文件
-	        if (res != FR_OK || fileinfo.fname[0] == 0) break;  //错误了/到末尾了,退出
-	        //if (fileinfo.fname[0] == '.') continue;             //忽略上级目录
-#if _USE_LFN
-        	fn = *fileinfo.lfname ? fileinfo.lfname : fileinfo.fname;
-#else							   
-        	fn = fileinfo.fname;
-#endif	                                              /* It is a file. */
-			file_operate_debug("%s/", path);//打印路径	
-			file_operate_debug("%s\r\n",  fn);//打印文件名	  
-		} 
-		f_closedir(&dir);
-    }
-	free(fileinfo.lfname);
-    return res;	  
+    return 0;	  
 }
 
  //遍历文件到内存
@@ -99,48 +35,13 @@ u8 mf_scan_files(u8 * path)
  //返回值:执行结果
 u8 mf_scan_files2(u8 * path, char *ptr[], u8 *cnt)
 {
-	int i = 0, j = 0;
-	char *temp = ptr[0];
-	DIR dir; //目录
-	FRESULT res;	  
-    char *fn;   /* This function is assuming non-Unicode cfg. */
-#if _USE_LFN
- 	fileinfo.lfsize = _MAX_LFN * 2 + 1;
-	fileinfo.lfname = malloc(fileinfo.lfsize);
-#endif		  
-
-    res = f_opendir(&dir,(const TCHAR*)path); //打开一个目录
-    if (res == FR_OK) 
-	{	
-		while(1)
-		{
-	        res = f_readdir(&dir, &fileinfo);                   //读取目录下的一个文件
-	        if (res != FR_OK || fileinfo.fname[0] == 0) break;  //错误了/到末尾了,退出
-	        //if (fileinfo.fname[0] == '.') continue;             //忽略上级目录
-#if _USE_LFN
-        	fn = *fileinfo.lfname ? fileinfo.lfname : fileinfo.fname;
-#else							   
-        	fn = fileinfo.fname;
-#endif	                                              /* It is a file. */
-			ptr[j] = temp;
-			sprintf(ptr[j], "%s", fn);//存放路径和文件名
-			// file_operate_debug("%s\r\n", ptr[j]);	
-			i = strlen(ptr[j]);
-			temp += i;
-			temp++;
-			j++;
-			*cnt = j;
-		} 
-		f_closedir(&dir);
-    }	  
-	free(fileinfo.lfname);
-    return res;	  
+    return 0;	  
 }
 
 //显示剩余容量
 //drv:盘符
 //返回值:剩余容量(字节)
-u32 mf_showfree(u8 *drv)
+/* u32 mf_showfree(u8 *drv)
 {
 	FATFS *fs1;
 	u8 res;
@@ -157,49 +58,40 @@ u32 mf_showfree(u8 *drv)
 #endif	  
 		if(tot_sect<20480)//总容量小于10M
 		{
-		    /* Print free space in unit of KB (assuming 512 bytes/sector) */
+		    //Print free space in unit of KB (assuming 512 bytes/sector)
 		    file_operate_debug("\r\n磁盘总容量:%d KB\r\n"
 		           "可用空间:%d KB\r\n",
 		           tot_sect>>1,fre_sect>>1);
 		}else
 		{
-		    /* Print free space in unit of KB (assuming 512 bytes/sector) */
+		    //Print free space in unit of KB (assuming 512 bytes/sector)
 		    file_operate_debug("\r\n磁盘总容量:%d MB\r\n"
 		           "可用空间:%d MB\r\n",
 		           tot_sect>>11,fre_sect>>11);
 		}
 	}
 	return fre_sect;
-}		    
+}	 */	    
 
 //格式化
 //path:磁盘路径，比如"0:"、"1:"
 //mode:模式
 //au:簇大小
 //返回值:执行结果
-/* u8 mf_fmkfs(u8* path,u8 mode,u16 au)
+uint8_t MTF_disk_fromat(uint8_t* path,uint8_t mode,uint16_t au)
 {
-	return f_mkfs((const TCHAR*)path,mode,au);//格式化,drv:盘符;mode:模式;au:簇大小
-}  */
-
-//修改文件/目录名字(如果目录不同,还可以移动文件哦!)
-//oldname:之前的名字
-//newname:新名字
-//返回值:执行结果
-/* u8 mf_rename(u8 *oldname,u8* newname)
-{
-	return  f_rename((const TCHAR *)oldname,(const TCHAR *)newname);
-} */
+	return 0; //f_mkfs((const TCHAR*)path,mode,au);//格式化,drv:盘符;mode:模式;au:簇大小
+} 
 
 //获取盘符（磁盘名字）
 //path:磁盘路径，比如"0:"、"1:"  
-void mf_getlabel(u8 *path)
+void MTF_disk_get_label(uint8_t *path)
 {
 	u8 buf[20];
 	u32 sn=0;
-	u8 res;
-	res=f_getlabel ((const TCHAR *)path,(TCHAR *)buf,(DWORD*)&sn);
-	if(res==FR_OK)
+	u8 res = 0;
+	// res=f_getlabel ((const TCHAR *)path,(TCHAR *)buf,(DWORD*)&sn);
+	if(res==0)
 	{
 		file_operate_debug("\r\n磁盘%s 的盘符为:%s\r\n",path,buf);
 		file_operate_debug("磁盘%s 的序列号:%X\r\n\r\n",path,sn); 
@@ -208,11 +100,11 @@ void mf_getlabel(u8 *path)
 
 //设置盘符（磁盘名字），最长11个字符！！，支持数字和大写字母组合以及汉字等
 //path:磁盘号+名字，比如"0:ALIENTEK"、"1:OPENEDV"  
-void mf_setlabel(u8 *path)
+void MTF_disk_set_label(uint8_t *path)
 {
-	u8 res;
-	res=f_setlabel ((const TCHAR *)path);
-	if(res==FR_OK)
+	u8 res = 0;
+	// res=f_setlabel ((const TCHAR *)path);
+	if(res==0)
 	{
 		file_operate_debug("\r\n磁盘盘符设置成功:%s\r\n",path);
 	}else file_operate_debug("\r\n磁盘盘符设置失败，错误码:%X\r\n",res);
@@ -226,7 +118,7 @@ void mf_setlabel(u8 *path)
 //1:覆盖原有的文件
 u8 mf_copy(u8 *psrc, u8 *pdst, u8 fwmode)
 {
-	#define FATFS_COPY_ONCE_SIZE 4096 //等于存储芯片单位刷写大小或成倍数关系, 写入才快速
+/* 	#define FATFS_COPY_ONCE_SIZE 4096 //等于存储芯片单位刷写大小或成倍数关系, 写入才快速
 
 	UINT bw = 0, br = 0;
 	FIL *fsrc = 0;
@@ -237,7 +129,7 @@ u8 mf_copy(u8 *psrc, u8 *pdst, u8 fwmode)
 	u8 dp[] = {0, ':', 0};
 	
 	dp[0] = pdst[0];
-    exf_getfree(&dp[0],&total,&freeStorage); //获取磁盘容量情况
+    MTF_disk_get_free(&dp[0],&total,&freeStorage); //获取磁盘容量情况
 	total *= 1024; //KB->B
 	freeStorage *= 1024;
 
@@ -306,7 +198,8 @@ u8 mf_copy(u8 *psrc, u8 *pdst, u8 fwmode)
 	free(fsrc); //释放内存
 	free(fdst);
 	free(fbuf);
-	return res;
+	return res; */
+	return 0;
 }
 
 //得到路径下的文件夹
@@ -336,7 +229,7 @@ static u8 *get_src_dname(u8 *dpfn)
 //1:覆盖原有的文件
 u8 mf_dcopy(u8 *psrc, u8 *pdst, u8 fwmode)
 {
-#define MAX_PATHNAME_DEPTH 512 + 1 //最大目标文件路径+文件名深度
+/* #define MAX_PATHNAME_DEPTH 512 + 1 //最大目标文件路径+文件名深度
 	u8 res = 0;
 	DIR *srcdir = 0;	//源目录
 	DIR *dstdir = 0;	//源目录
@@ -424,58 +317,37 @@ u8 mf_dcopy(u8 *psrc, u8 *pdst, u8 fwmode)
 	free(srcdir);
 	free(dstdir);
 	free(finfo);
-	return res;
+	return res; */
+	return 0;
 }
 
  //查找一个文件是否存在
  //path:路径, nanme: 文件名
  //返回值:执行结果 0:存在, 其他:不存在
-u8 mf_exist_files(u8 * path, const u8 *name)
+uint8_t MTF_exist_file(char * path, const char *name)
 {
-	DIR dir; //目录
-	FRESULT res;	  
-    char *fn;   /* This function is assuming non-Unicode cfg. */
-#if _USE_LFN
- 	fileinfo.lfsize = _MAX_LFN * 2 + 1;
-	fileinfo.lfname = malloc(fileinfo.lfsize);
-#endif		  
+	char k[64] = {0};
+	uint8_t res = 1;
+    mFILE *ff = NULL;
 
-    res = f_opendir(&dir,(const TCHAR*)path); //打开一个目录
-    if (res == FR_OK) 
-	{	
-		while(1)
-		{
-	        res = f_readdir(&dir, &fileinfo);                   //读取目录下的一个文件
-	        if (res != FR_OK || fileinfo.fname[0] == 0) 
-			{
-				res = FR_NO_FILE; //不存在
-				break;  //错误了/到末尾了,退出
-			}
-	        //if (fileinfo.fname[0] == '.') continue;             //忽略上级目录
-#if _USE_LFN
-        	fn = *fileinfo.lfname ? fileinfo.lfname : fileinfo.fname;
-#else							   
-        	fn = fileinfo.fname;
-#endif	                                              /* It is a file. */
-			// file_operate_debug("%s/", path);//打印路径	
-			// file_operate_debug("%s\r\n",  fn);//打印文件名	  
-			if(strcmp((const char *)name, fn)==0)
-			{
-				res = FR_OK; //存在
-				
-				break; //找到
-			}
-		} 
-		f_closedir(&dir);
-    }	  
-	free(fileinfo.lfname);
+    strcat(k, path);
+    strcat(k, name);
+
+    ff = MTF_open(k, "rb");
+    if (ff != NULL)
+    {
+        MTF_close(ff);
+        res = 0;
+    }
+
     return res;	  
 }
 
-int mf_load_files(char **out, long *outsize, const char *filename)
+//将一个文件加载至指定内存
+uint8_t MTF_load_file(char **out, long *outsize, const char *filename)
 {
 	mFILE *f_temp;
-	int res = 0;
+	uint8_t res = 0;
 	size_t size = 0, br = 0;
 
 	f_temp = MTF_open(filename, "rb");
@@ -508,23 +380,23 @@ int mf_load_files(char **out, long *outsize, const char *filename)
 //total:总容量	 （单位KB）
 //free:剩余容量	 （单位KB）
 //返回值:0,正常.其他,错误代码
-u8 exf_getfree(u8 *drv,u32 *total,u32 *free)
+uint8_t MTF_disk_get_free(uint8_t *drv,uint32_t *total,uint32_t *free)
 {
-	FATFS *fs1;
-	u8 res;
-    u32 fre_clust=0, fre_sect=0, tot_sect=0;
+	uint8_t res = 0;
+    uint32_t fre_clust=0, fre_sect=0, tot_sect=0;
     //得到磁盘信息及空闲簇数量
-    res =(u32)f_getfree((const TCHAR*)drv, (DWORD*)&fre_clust, &fs1);
-    if(res==0)
-	{											   
-	    tot_sect=(fs1->n_fatent-2)*fs1->csize;	//得到总扇区数
-	    fre_sect=fre_clust*fs1->csize;			//得到空闲扇区数	   
-#if _MAX_SS!=512				  				//扇区大小不是512字节,则转换为512字节
-		tot_sect*=fs1->ssize/512;
-		fre_sect*=fs1->ssize/512;
-#endif	  
-		*total=tot_sect>>1;	//单位为KB
-		*free=fre_sect>>1;	//单位为KB 
- 	}
+	// FATFS *fs1;
+    // res =(uint32_t)f_getfree((const TCHAR*)drv, (DWORD*)&fre_clust, &fs1);
+//     if(res==0)
+// 	{											   
+// 	    tot_sect=(fs1->n_fatent-2)*fs1->csize;	//得到总扇区数
+// 	    fre_sect=fre_clust*fs1->csize;			//得到空闲扇区数	   
+// #if _MAX_SS!=512				  				//扇区大小不是512字节,则转换为512字节
+// 		tot_sect*=fs1->ssize/512;
+// 		fre_sect*=fs1->ssize/512;
+// #endif	  
+// 		*total=tot_sect>>1;	//单位为KB
+// 		*free=fre_sect>>1;	//单位为KB 
+//  	}
 	return res;
 }	

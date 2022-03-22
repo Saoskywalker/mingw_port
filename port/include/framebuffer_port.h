@@ -118,7 +118,7 @@ void MTF_fb_set_backlight(framebuffer_dev_type *fb, int32_t brightness); //设�
 void MTF_fb_TV_input(framebuffer_dev_type *fb, uint8_t state, uint8_t contrast, uint8_t bright, uint8_t saturation, uint8_t hue); //是否开启AV输入
 void MTF_fb_scale(framebuffer_dev_type *fb, uint8_t state, void *data); //是否开启硬件缩放
 
-void MTF_fb_init(framebuffer_dev_type *fb);
-void MTF_fb_exit(framebuffer_dev_type *fb);
+uint8_t MTF_fb_init(framebuffer_dev_type *fb);
+uint8_t MTF_fb_exit(framebuffer_dev_type *fb);
 
 #endif

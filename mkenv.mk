@@ -60,15 +60,16 @@ PROG = main_debug
 ASFLAGS		= -g -ggdb -Wall -O0 -ffreestanding -std=gnu99 $(DEFINES)
 CFLAGS		= -g -ggdb -Wall -O0 -ffreestanding -std=gnu99 $(DEFINES)
 CXXFLAGS	= -g -ggdb -Wall -O0 -ffreestanding -std=c++11 $(DEFINES)
+LDFLAGS		+= #-T f1c100s.ld -nostdlib
+MCFLAGS		+= #-march=armv5te -mtune=arm926ej-s -mfloat-abi=soft -marm -mno-thumb-interwork
 else
 PROG = main_release
 ASFLAGS		= -Wall -Os -ffreestanding -std=gnu99 $(DEFINES)
 CFLAGS		= -Wall -Os -ffreestanding -std=gnu99 $(DEFINES)
 CXXFLAGS	= -Wall -Os -ffreestanding -std=c++11 $(DEFINES)
+LDFLAGS		+= -mwindows
+MCFLAGS		+= #-march=armv5te -mtune=arm926ej-s -mfloat-abi=soft -marm -mno-thumb-interwork
 endif
-
-LDFLAGS		= #-T f1c100s.ld -nostdlib
-MCFLAGS		= #-march=armv5te -mtune=arm926ej-s -mfloat-abi=soft -marm -mno-thumb-interwork
 
 #include path
 INCDIRS	+= \
@@ -78,7 +79,7 @@ INCDIRS	+= \
 LIBDIRS	+=
 
 #library
-LIBS += -lgcc -lmingw32 -lSDL2main -lSDL2
+LIBS += -lgcc -lmingw32 -lSDL2main -lSDL2 -lwinmm
 
 #c source path
 SRCDIRS_C += 
