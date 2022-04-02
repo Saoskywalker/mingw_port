@@ -11,6 +11,16 @@ unsigned char diskCheckBusy(void)
 	return 0;
 }
 
+void MTF_storage_local_set(unsigned char num) //选定存储设备
+{
+
+}
+
+unsigned char MTF_storage_local_get(void) //获取储存区域
+{
+    return 0;
+}
+
 mFILE *cache_open(const char *filename, const char *mode)
 {
    return fopen(filename, mode);
@@ -98,10 +108,23 @@ int MTF_rename(const char *old_filename, const char *new_filename)
 
 size_t MTF_size(mFILE *stream)
 {
+    long temp = 0;
+    int res = 0;
+    size_t i = 0;
+
+    temp = ftell(stream); //记录位置
     if (fseek(stream, 0, SEEK_END) != 0)
+        res = 1;
+    else
+        res = 0;
+
+    i = (size_t)ftell(stream);
+    fseek(stream, temp, SEEK_SET); //移到原处
+
+    if(res)
         return 0;
     else
-        return (size_t)ftell(stream);
+        return i;
 }
 
 /**********************

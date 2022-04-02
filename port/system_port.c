@@ -4,8 +4,9 @@
 #include "ROM_port.h"
 #include "uart_port.h"
 #include "system_port.h"
+#include "framebuffer_port.h"
 
-#define DEBUG_SYSTEM(...) printf(__VA_ARGS__)
+#define DEBUG_SYSTEM(...) //printf(__VA_ARGS__)
 
 #define _TOUCH_NUM 10
 static int sdl_x[_TOUCH_NUM], sdl_y[_TOUCH_NUM];
@@ -13,11 +14,18 @@ static uint8_t sdl_key_target_num = _TOUCH_NUM, sdl_key_result_num = 0;
 
 void sdl_touch(int *x, int *y, uint8_t target_num, uint8_t *result_num) //返回触摸参数
 {
+    uint8_t j = sdl_key_result_num;
+
+    *result_num = 0;
     for (size_t i = 0; i < target_num && target_num <= _TOUCH_NUM; i++)
     {
-        x[i] = sdl_x[i];
-        y[i] = sdl_y[i];
-        (*result_num)++;
+        if (j)
+        {
+            j--;
+            x[i] = sdl_x[i];
+            y[i] = sdl_y[i];
+            (*result_num)++;
+        }
     }
 }
 
@@ -39,6 +47,8 @@ uint8_t system_exit_weak(void)
     SDL_Delay(100); // 用于等待线程和其他东西退出
     MTF_ROM_exit();
     MTF_UART_exit(NULL);
+    MTF_fb_destroy(NULL);
+    MTF_fb_exit(NULL);
     SDL_Quit();
 
     return 0;
@@ -53,8 +63,6 @@ uint32_t system_get_state(void)
 uint8_t system_process_weak(void)
 {
     SDL_Event ev;
-
-    sdl_key_result_num = 0;
 
     while (SDL_PollEvent(&ev)) //SDL事件获取
     {
@@ -83,27 +91,41 @@ uint8_t system_process_weak(void)
             {
                 int px = ev.button.x;
                 int py = ev.button.y;
-                DEBUG_SYSTEM("SDL_BUTTON_LEFT x, y %d %d ...............\n", px, py);
+                DEBUG_SYSTEM("SDL_BUTTON_LEFT DOWN x, y %d %d ...............\n", px, py);
 
-                if (sdl_key_target_num > sdl_key_result_num)
+                if (sdl_key_result_num < _TOUCH_NUM)
                 {
                     sdl_x[sdl_key_result_num] = ev.motion.x;
                     sdl_y[sdl_key_result_num] = ev.motion.y;
                     sdl_key_result_num++; //标记按下数量
+                }
+                else
+                {
+                    sdl_key_result_num = 0;
                 }
             }
             else if (SDL_BUTTON_RIGHT == ev.button.button)
             {
                 int px = ev.button.x;
                 int py = ev.button.y;
-                DEBUG_SYSTEM("SDL_BUTTON_RIGHT x, y %d %d ...............\n", px, py);
+                DEBUG_SYSTEM("SDL_BUTTON_RIGHT DOWN x, y %d %d ...............\n", px, py);
+            }
+        }
+        else if (SDL_MOUSEBUTTONUP == ev.type)
+        {
+            if (SDL_BUTTON_LEFT == ev.button.button)
+            {
+                int px = ev.button.x;
+                int py = ev.button.y;
+                DEBUG_SYSTEM("SDL_BUTTON_LEFT UP x, y %d %d ...............\n", px, py);
 
-                if (sdl_key_target_num > sdl_key_result_num)
-                {
-                    sdl_x[sdl_key_result_num] = ev.motion.x;
-                    sdl_y[sdl_key_result_num] = ev.motion.y;
-                    sdl_key_result_num++; //标记按下数量
-                }
+                sdl_key_result_num = 0;
+            }
+            else if (SDL_BUTTON_RIGHT == ev.button.button)
+            {
+                int px = ev.button.x;
+                int py = ev.button.y;
+                DEBUG_SYSTEM("SDL_BUTTON_RIGHT UP x, y %d %d ...............\n", px, py);
             }
         }
         else if (SDL_MOUSEMOTION == ev.type)
@@ -112,9 +134,6 @@ uint8_t system_process_weak(void)
             int py = ev.motion.y;
 
             DEBUG_SYSTEM("x, y %d %d ...............\n", px, py);
-
-            sdl_x[0] = ev.motion.x;
-            sdl_y[0] = ev.motion.y;
         }
         else if (SDL_QUIT == ev.type)
         {
