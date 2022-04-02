@@ -1,5 +1,5 @@
 #include "timer_port.h"
-// #include "Sagittarius_timer.h"
+#include "Sagittarius_timer.h"
 #include <SDL2/SDL.h>
 #include "touch_port.h"
 #include "MTF_io.h"
@@ -13,8 +13,8 @@ static int TIMER0_ISR(void *arg)
 	while (system_get_state() == 0)
 	{
 		// TEST_TOGGLE_PIN();
-		// Sagittarius_timer();
-		SDL_Delay(5); // delay 5ms
+		Sagittarius_timer();
+		SDL_Delay(1); // delay 1ms
 	}
 
 	return 0;

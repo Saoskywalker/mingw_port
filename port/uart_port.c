@@ -43,7 +43,10 @@ size_t MTF_UART_Transmit(MTF_HandleDef *huart, uint8_t *pData, size_t Size)
 
     // /** Send "Hello,world!" */
     // return fwrite(pData, Size, 1, f_com);
-
+    for (size_t i = 0; i < Size; i++)
+    {
+        DEBUG_UART("%#X ", pData[i]);
+    }
     return 0;
 }
 
@@ -67,7 +70,7 @@ uint8_t MTF_UART_Transmit_Empty(MTF_HandleDef *huart)
 
     // /** waiting a vaild character */
     // return !fwrite(&i, 1, 1, f_com);
-
+    DEBUG_UART("\r\n");
     return 1;
 }
 
@@ -83,6 +86,6 @@ uint8_t MTF_UART_Receive_Empty(MTF_HandleDef *huart)
 
     // /** Notice: moves the file position indicator to the beginning in a file */
     // fseek(f_com, 0, SEEK_SET);
-
-    return 1;
+    DEBUG_UART("send uart: ");
+    return 0;
 }
