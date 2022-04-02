@@ -79,7 +79,7 @@ INCDIRS	+= \
 LIBDIRS	+=
 
 #library
-LIBS += -lgcc -lmingw32 -lSDL2main -lSDL2 -lwinmm
+LIBS += ico/project_ico.res -lgcc -lmingw32 -lSDL2main -lSDL2 -lwinmm
 
 #c source path
 SRCDIRS_C += 
