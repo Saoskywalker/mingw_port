@@ -243,11 +243,7 @@ HAL_StatusTypeDef MTF_UART_DMAStop(MTF_HandleDef *huart);
 uint8_t MTF_UART_Transmit_Empty(MTF_HandleDef *huart);
 uint8_t MTF_UART_Receive_Empty(MTF_HandleDef *huart);
 uint8_t MTF_UART_Transmit_FIFO_Count(MTF_HandleDef *huart);
-
-static __INLINE uint8_t MTF_UART_Receive_FIFO_Count(MTF_HandleDef *huart)
-{
-  return 0; //uart_16550_rec_fifo_cnt(huart->uart);
-}
+uint8_t MTF_UART_Receive_FIFO_Count(MTF_HandleDef *huart);
 
 void MTF_UART_IRQHandler(MTF_HandleDef *huart);
 void MTF_UART_TxHalfCpltCallback(MTF_HandleDef *huart);
