@@ -65,8 +65,8 @@ MCFLAGS		+= #-march=armv5te -mtune=arm926ej-s -mfloat-abi=soft -marm -mno-thumb-
 else
 PROG = main_release
 ASFLAGS		= -Wall -Os -ffreestanding -std=gnu99 $(DEFINES)
-CFLAGS		= -Wall -Os -ffreestanding -std=gnu99 $(DEFINES)
-CXXFLAGS	= -Wall -Os -ffreestanding -std=c++11 $(DEFINES)
+CFLAGS		= -Wall -Os -ffreestanding -std=gnu99 -fno-strict-aliasing $(DEFINES)
+CXXFLAGS	= -Wall -Os -ffreestanding -std=c++11 -fno-strict-aliasing $(DEFINES)
 LDFLAGS		+= -mwindows
 MCFLAGS		+= #-march=armv5te -mtune=arm926ej-s -mfloat-abi=soft -marm -mno-thumb-interwork
 endif
@@ -74,18 +74,20 @@ endif
 #include path
 INCDIRS	+= \
 	-Iarch/x64/public/include \
+	-Iarch/x64/mingw/include \
 
 #library path
 LIBDIRS	+=
 
 #library
-LIBS += ico/project_ico.res -lgcc -lmingw32 -lSDL2main -lSDL2 -lwinmm
+LIBS += ico/project_ico.res -lgcc -lmingw32 -lSDL2main -lSDL2 -lwinmm -lstdc++
 
-#c source path
-SRCDIRS_C += 
-
-#base drivers src
+#c source files
 SRC_C += \
+
+#c++ source files
+SRC_CXX += \
+	arch/x64/mingw/Serial.cpp \
 
 all: $(BUILD)/$(addprefix $(PROG), $(EXTENSION))
 	$(ECHO) "<><><><><><>><><>><><><><><><><><><>><><><><><><>"
