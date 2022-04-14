@@ -10,7 +10,7 @@
 
 #define _TOUCH_NUM 10
 static int sdl_x[_TOUCH_NUM], sdl_y[_TOUCH_NUM];
-static uint8_t sdl_key_target_num = _TOUCH_NUM, sdl_key_result_num = 0;
+static uint8_t sdl_key_result_num = 0;
 
 void sdl_touch(int *x, int *y, uint8_t target_num, uint8_t *result_num) //返回触摸参数
 {
@@ -89,9 +89,7 @@ uint8_t system_process_weak(void)
         {
             if (SDL_BUTTON_LEFT == ev.button.button)
             {
-                int px = ev.button.x;
-                int py = ev.button.y;
-                DEBUG_SYSTEM("SDL_BUTTON_LEFT DOWN x, y %d %d ...............\n", px, py);
+                DEBUG_SYSTEM("SDL_BUTTON_LEFT DOWN x, y %d %d ...............\n", ev.button.x, ev.button.y);
 
                 if (sdl_key_result_num < _TOUCH_NUM)
                 {
@@ -106,34 +104,25 @@ uint8_t system_process_weak(void)
             }
             else if (SDL_BUTTON_RIGHT == ev.button.button)
             {
-                int px = ev.button.x;
-                int py = ev.button.y;
-                DEBUG_SYSTEM("SDL_BUTTON_RIGHT DOWN x, y %d %d ...............\n", px, py);
+                DEBUG_SYSTEM("SDL_BUTTON_RIGHT DOWN x, y %d %d ...............\n", ev.button.x, ev.button.y);
             }
         }
         else if (SDL_MOUSEBUTTONUP == ev.type)
         {
             if (SDL_BUTTON_LEFT == ev.button.button)
             {
-                int px = ev.button.x;
-                int py = ev.button.y;
-                DEBUG_SYSTEM("SDL_BUTTON_LEFT UP x, y %d %d ...............\n", px, py);
+                DEBUG_SYSTEM("SDL_BUTTON_LEFT UP x, y %d %d ...............\n", ev.button.x, ev.button.y);
 
                 sdl_key_result_num = 0;
             }
             else if (SDL_BUTTON_RIGHT == ev.button.button)
             {
-                int px = ev.button.x;
-                int py = ev.button.y;
-                DEBUG_SYSTEM("SDL_BUTTON_RIGHT UP x, y %d %d ...............\n", px, py);
+                DEBUG_SYSTEM("SDL_BUTTON_RIGHT UP x, y %d %d ...............\n", ev.button.x, ev.button.y);
             }
         }
         else if (SDL_MOUSEMOTION == ev.type)
         {
-            int px = ev.motion.x;
-            int py = ev.motion.y;
-
-            DEBUG_SYSTEM("x, y %d %d ...............\n", px, py);
+            DEBUG_SYSTEM("x, y %d %d ...............\n", ev.button.x, ev.button.y);
         }
         else if (SDL_QUIT == ev.type)
         {
