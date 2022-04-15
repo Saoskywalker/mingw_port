@@ -80,7 +80,7 @@ INCDIRS	+= \
 LIBDIRS	+=
 
 #library
-LIBS += ico/project_ico.res -lgcc -lmingw32 -lSDL2main -lSDL2 -lwinmm -lstdc++
+LIBS += ico/project_ico.res ico/res.o -lgcc -lmingw32 -lSDL2main -lSDL2 -lwinmm -lstdc++
 
 #c source files
 SRC_C += \

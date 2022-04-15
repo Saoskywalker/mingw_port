@@ -119,6 +119,7 @@ void MTF_fb_TV_input(framebuffer_dev_type *fb, uint8_t state, uint8_t contrast, 
 void MTF_fb_scale(framebuffer_dev_type *fb, uint8_t state, void *data); //是否开启硬件缩放
 
 uint8_t MTF_fb_init(framebuffer_dev_type *fb);
+uint8_t MTF_fb_reset(framebuffer_dev_type *fb);
 uint8_t MTF_fb_exit(framebuffer_dev_type *fb);
 
 #endif
