@@ -1,8 +1,39 @@
 #include "uart_port.h"
 #include "MTF_io.h"
 #include "Serial.h"
+#include <SDL2/SDL.h>
+#include "system_port.h"
+#include "fifo.h"
 
 #define DEBUG_UART(...) printf(__VA_ARGS__)
+
+/****************
+ * 此uart库因接收时等待需无数据超时后才跳出, 为避免阻塞在此, 需要开辟线程
+ * ************/
+#define UART_REC_FIFO_SIZE 1024
+struct fifo_t *uart_rec_fifo = NULL;
+static uint8_t _uart_thread_start = 0;
+static int uart_thread(void *arg)
+{
+    size_t r = 0;
+    uint8_t temp_rec[UART_REC_FIFO_SIZE];
+
+    while (system_get_state() == 0)
+    {
+        if (_uart_thread_start)
+        {
+            serialRead(temp_rec, sizeof(temp_rec), &r);
+            fifo_put(uart_rec_fifo, temp_rec, r);
+            for (size_t i = 0; i < r; i++)
+            {
+                DEBUG_UART("%#X ", temp_rec[i]);
+            }
+        }
+        SDL_Delay(2); // delay 2ms
+    }
+
+    return 0;
+}
 
 // static mFILE *f_com = NULL;
 
@@ -27,7 +58,10 @@ HAL_StatusTypeDef MTF_UART_Init(MTF_HandleDef *huart)
     str[3] = c;    
     res = serialOpen((const char *)str, (int)huart->Init.BaudRate, (char)huart->Init.Parity, 
                     (char)huart->Init.WordLength, (char)huart->Init.StopBits, 0);
+    uart_rec_fifo = fifo_alloc(UART_REC_FIFO_SIZE);
     DEBUG_UART("open serial: %c, res: %d\n", c, res);
+    SDL_CreateThread(uart_thread, NULL, NULL); //创建线程
+    _uart_thread_start = 1; //开始线程
     return res;
 }
 
@@ -37,6 +71,9 @@ HAL_StatusTypeDef MTF_UART_exit(MTF_HandleDef *huart)
     // fclose(f_com);
     // return HAL_OK;
 
+    _uart_thread_start = 0; //暂停线程
+    SDL_Delay(5);
+    fifo_free(uart_rec_fifo);
     return serialClose();
 }
 
@@ -64,9 +101,6 @@ size_t MTF_UART_Transmit(MTF_HandleDef *huart, uint8_t *pData, size_t Size)
     return r;
 }
 
-static uint8_t temp_rec[1024];
-static size_t temp_rec_cnt = 0, temp_rec_cnt_p = 0;
-
 size_t MTF_UART_Receive(MTF_HandleDef *huart, uint8_t *pData, size_t Size)
 {
     // /** Notice: moves the file position indicator to the beginning in a file */
@@ -75,28 +109,12 @@ size_t MTF_UART_Receive(MTF_HandleDef *huart, uint8_t *pData, size_t Size)
     // /** waiting a vaild character */
     // return fread(pData, Size, 1, f_com);
 
-    size_t i = 0;
-    while (temp_rec_cnt > 0 && temp_rec_cnt_p < temp_rec_cnt && i < Size)
-    {
-        pData[i] = temp_rec[temp_rec_cnt_p];
-        temp_rec_cnt_p++;
-        i++;
-    }
-    return i;
+    return fifo_get(uart_rec_fifo, pData, (unsigned int)Size);
 }
 
 uint8_t MTF_UART_Receive_FIFO_Count(MTF_HandleDef *huart)
 {
-    size_t r = 0;
-    serialRead(temp_rec, sizeof(temp_rec), &r);
-    temp_rec_cnt = r;
-    temp_rec_cnt_p = 0;
-    for (size_t i = 0; i < r; i++)
-    {
-        DEBUG_UART("%#X ", temp_rec[i]);
-    }
-
-    return (uint8_t)r;
+    return (uint8_t)fifo_len(uart_rec_fifo);
 }
 
 uint8_t MTF_UART_Transmit_Empty(MTF_HandleDef *huart)
