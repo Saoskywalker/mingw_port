@@ -344,35 +344,46 @@ uint8_t MTF_exist_file(char * path, const char *name)
 }
 
 //将一个文件加载至指定内存
-uint8_t MTF_load_file(char **out, long *outsize, const char *filename)
+/* load file into buffer that already has the correct allocated size. Returns error code.*/
+static uint8_t _buffer_file(unsigned char *out, size_t size, const char *filename)
 {
-	mFILE *f_temp;
-	uint8_t res = 0;
-	size_t size = 0, br = 0;
+	FILE *file;
+	size_t readsize;
+	file = MTF_open(filename, "rb");
+	if (!file)
+		return 78;
 
-	f_temp = MTF_open(filename, "rb");
-	if (f_temp != NULL)
-	{
-		size = MTF_size(f_temp);
-		*out = malloc(size);
-		br = MTF_read(*out, 1, size, f_temp);
-		if (size != br) //读取失败
-		{
-			free(*out);
-			*out = NULL;
-			res = 7;
-		}
-		else
-		{
-			res = 0;
-		}
-		MTF_close(f_temp);
-	}
-	else
-	{
-		res = 4;
-	}
-	return res;
+	readsize = MTF_read(out, 1, size, file);
+	MTF_close(file);
+
+	if (readsize != size)
+		return 78;
+	return 0;
+}
+
+uint8_t MTF_load_file(unsigned char **out, size_t *outsize, const char *filename)
+{
+	size_t size = 0;
+	FILE *file;
+
+	file = MTF_open(filename, "rb");
+	if (!file)
+		return 78;
+
+	size = MTF_size(file);
+
+	MTF_close(file);
+
+	if (size < 0)
+		return 78;
+
+	*outsize = (size_t)size;
+
+	*out = (unsigned char *)malloc((size_t)size);
+	if (!(*out) && size > 0)
+		return 83; /*the above malloc failed*/
+
+	return _buffer_file(*out, (size_t)size, filename);
 }
 
 //得到磁盘剩余容量
