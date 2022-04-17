@@ -58,10 +58,19 @@ HAL_StatusTypeDef MTF_UART_Init(MTF_HandleDef *huart)
     str[3] = c;    
     res = serialOpen((const char *)str, (int)huart->Init.BaudRate, (char)huart->Init.Parity, 
                     (char)huart->Init.WordLength, (char)huart->Init.StopBits, 0);
-    uart_rec_fifo = fifo_alloc(UART_REC_FIFO_SIZE);
-    DEBUG_UART("open serial: %c, res: %d\n", c, res);
-    SDL_CreateThread(uart_thread, NULL, NULL); //创建线程
-    _uart_thread_start = 1; //开始线程
+    if(res)
+    {
+        uart_rec_fifo = NULL;
+        _uart_thread_start = 0;
+    }
+    else
+    {
+        uart_rec_fifo = fifo_alloc(UART_REC_FIFO_SIZE);
+        DEBUG_UART("open serial: %c, res: %d\n", c, res);
+        SDL_CreateThread(uart_thread, NULL, NULL); //创建线程
+        _uart_thread_start = 1; //开始线程
+    }
+
     return res;
 }
 
@@ -70,6 +79,9 @@ HAL_StatusTypeDef MTF_UART_exit(MTF_HandleDef *huart)
     /** close Com */
     // fclose(f_com);
     // return HAL_OK;
+
+    if (_uart_thread_start == 0)
+        return 0;
 
     _uart_thread_start = 0; //暂停线程
     SDL_Delay(5);
@@ -90,6 +102,9 @@ size_t MTF_UART_Transmit(MTF_HandleDef *huart, uint8_t *pData, size_t Size)
     // /** Send "Hello,world!" */
     // return fwrite(pData, Size, 1, f_com);
 
+    if (_uart_thread_start == 0)
+        return 0;
+
     size_t r = 0;
     serialWrite(pData, Size, &r);
 
@@ -109,11 +124,17 @@ size_t MTF_UART_Receive(MTF_HandleDef *huart, uint8_t *pData, size_t Size)
     // /** waiting a vaild character */
     // return fread(pData, Size, 1, f_com);
 
+    if (_uart_thread_start == 0)
+        return 0;
+
     return fifo_get(uart_rec_fifo, pData, (unsigned int)Size);
 }
 
 uint8_t MTF_UART_Receive_FIFO_Count(MTF_HandleDef *huart)
 {
+    if (_uart_thread_start == 0)
+        return 0;
+        
     return (uint8_t)fifo_len(uart_rec_fifo);
 }
 
