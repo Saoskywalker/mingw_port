@@ -6,6 +6,7 @@
 static  uint8_t  *audio_chunk; 
 static  uint32_t  audio_len = 0; 
 static  uint8_t  *audio_pos; 
+static  uint8_t  _audio_run = 0; 
 
 /* Audio Callback
  * The audio function callback takes the following parameters: 
@@ -17,8 +18,11 @@ static void fill_audio(void *udata, uint8_t *stream, int len)
 {
 	// SDL 2.0
 	SDL_memset(stream, 0, len);
-	if (audio_len == 0)
+	if (audio_len == 0 || _audio_run == 0)
+	{
+		audio_len = 0;
 		return;
+	}
 	len = (len > audio_len ? audio_len : len);
 
 	SDL_MixAudio(stream, audio_pos, len, SDL_MIX_MAXVOLUME);
@@ -55,7 +59,7 @@ char MTF_audio_pcm_output_init(audio_pcm_dev_type *dev, audio_pcm_dev_type *dest
 
 	// Play
 	SDL_PauseAudio(0);
-
+	_audio_run = 1;
 	return 0;
 }
 
@@ -63,7 +67,9 @@ char MTF_audio_pcm_output_exit(audio_pcm_dev_type *dev)
 {
 	pcm_run_time = 0;
 	_pcmFristOutput = 0;
-
+	_audio_run = 0;
+	while(audio_len == 1);
+	SDL_CloseAudio();
 	return 0;
 }
 
