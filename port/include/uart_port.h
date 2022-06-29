@@ -288,11 +288,6 @@ uint32_t MTF_UART_GetError(MTF_HandleDef *huart);
   * @{
   */
 
-/****************************
-应用定义接口
-*****************************/
-#define UART_D_HMI MTF_UART_0 
-
 #ifdef __cplusplus
 }
 #endif
