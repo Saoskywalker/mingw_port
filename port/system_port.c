@@ -50,6 +50,7 @@ uint8_t system_exit_weak(void)
     MTF_fb_destroy(NULL);
     MTF_fb_exit(NULL);
     SDL_Quit();
+    exit(0);
 
     return 0;
 }
