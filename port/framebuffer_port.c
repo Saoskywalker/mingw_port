@@ -4,6 +4,8 @@
 #include "MTF_io.h"
 #include "system_port.h"
 
+// #define _USE_MULIT_THREAD //使用多线程代替定时器, emsdk对多线程支持不完善
+
 #define DEBUG_FRAMEBUFFER(...) //printf(__VA_ARGS__)
 
 //目前F1C100S配置威1级缓冲
@@ -22,7 +24,11 @@ static SDL_Texture *sdlTexture = NULL;
 static int *screen_w = NULL, *screen_h = NULL;
 static uint8_t _dis_pasue = 0;
 
- int _SDL_flush(void *data)
+#ifdef _USE_MULIT_THREAD
+int _SDL_flush(void *data)
+#else
+uint32_t _SDL_flush(uint32_t interval, void *param)
+#endif
 {
     // Bit per Pixel
 // #if LOAD_BGRA
@@ -40,7 +46,9 @@ static uint8_t _dis_pasue = 0;
     SDL_Rect sdlRect;
     // SDL_Event event;
 
+#ifdef _USE_MULIT_THREAD
     while (system_get_state() == 0)
+#endif
     {
         if (SDL_buf != NULL && _dis_pasue == 0)
         {
@@ -74,10 +82,16 @@ static uint8_t _dis_pasue = 0;
             }
         }
 
+#ifdef _USE_MULIT_THREAD
         SDL_Delay(10); // delay 10ms
+#endif
     }
 
+#ifdef _USE_MULIT_THREAD
     return 0;
+#else
+    return interval;
+#endif
 }
 
 //截屏功能
@@ -225,7 +239,11 @@ uint8_t MTF_fb_init(framebuffer_dev_type *fb)
         SDL_SetWindowIcon(screen, surface);
     }
 
+#ifdef _USE_MULIT_THREAD
     SDL_CreateThread(_SDL_flush, NULL, NULL); //创建线程, 用于定时更新显示
+#else
+    SDL_AddTimer(10, _SDL_flush, NULL); //创建定时器, 用于定时更新显示
+#endif
 
     return 0;
 }

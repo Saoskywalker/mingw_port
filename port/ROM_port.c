@@ -8,19 +8,19 @@
  * from: https://www.cnblogs.com/zyl910/archive/2012/08/06/getcpuid_gcc.html
  * ********/
 // intrinsics
-#if defined(__GNUC__)    // GCC
+#if defined(__GNUC__) && !defined(__EMSCRIPTEN__)    // GCC
 #include <cpuid.h>
 #elif defined(_MSC_VER)    // MSVC
     #if _MSC_VER >=1400    // VC2005
 #include <intrin.h>
     #endif    // #if _MSC_VER >=1400
 #else
-#error Only supports MSVC or GCC.
+#warning CPU info get, Only supports MSVC or GCC.
 #endif    // #if defined(__GNUC__)
 
 static void getcpuidex(unsigned int CPUInfo[4], unsigned int InfoType, unsigned int ECXValue)
 {
-#if defined(__GNUC__)    // GCC
+#if defined(__GNUC__) && !defined(__EMSCRIPTEN__)    // GCC
     __cpuid_count(InfoType, ECXValue, CPUInfo[0],CPUInfo[1],CPUInfo[2],CPUInfo[3]);
 #elif defined(_MSC_VER)    // MSVC
     #if defined(_WIN64) || _MSC_VER>=1600    // 64位下不支持内联汇编. 1600: VS2010, 据说VC2008 SP1之后才支持__cpuidex.
@@ -46,7 +46,7 @@ static void getcpuidex(unsigned int CPUInfo[4], unsigned int InfoType, unsigned 
 
 static void getcpuid(unsigned int CPUInfo[4], unsigned int InfoType)
 {
-#if defined(__GNUC__)    // GCC
+#if defined(__GNUC__) && !defined(__EMSCRIPTEN__)    // GCC
     __cpuid(InfoType, CPUInfo[0],CPUInfo[1],CPUInfo[2],CPUInfo[3]);
 #elif defined(_MSC_VER)    // MSVC
     #if _MSC_VER>=1400    // VC2005才支持__cpuid

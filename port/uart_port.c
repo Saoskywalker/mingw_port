@@ -13,6 +13,9 @@
 #define UART_REC_FIFO_SIZE 1024
 struct fifo_t *uart_rec_fifo = NULL;
 static uint8_t _uart_thread_start = 0;
+
+#ifndef __EMSCRIPTEN__
+
 static int uart_thread(void *arg)
 {
     size_t r = 0;
@@ -74,6 +77,15 @@ HAL_StatusTypeDef MTF_UART_Init(MTF_HandleDef *huart)
     return res;
 }
 
+#else
+
+HAL_StatusTypeDef MTF_UART_Init(MTF_HandleDef *huart)
+{
+    return 0;
+}
+
+#endif
+
 HAL_StatusTypeDef MTF_UART_exit(MTF_HandleDef *huart)
 {
     /** close Com */
@@ -83,10 +95,14 @@ HAL_StatusTypeDef MTF_UART_exit(MTF_HandleDef *huart)
     if (_uart_thread_start == 0)
         return 0;
 
+#ifndef __EMSCRIPTEN__
     _uart_thread_start = 0; //暂停线程
     SDL_Delay(5);
     fifo_free(uart_rec_fifo);
     return serialClose();
+#else
+    return 0;
+#endif
 }
 
 HAL_StatusTypeDef MTF_UART_Reset(MTF_HandleDef *huart)
@@ -106,7 +122,9 @@ size_t MTF_UART_Transmit(MTF_HandleDef *huart, uint8_t *pData, size_t Size)
         return 0;
 
     size_t r = 0;
+#ifndef __EMSCRIPTEN__    
     serialWrite(pData, Size, &r);
+#endif
 
     for (size_t i = 0; i < Size; i++)
     {
@@ -126,16 +144,22 @@ size_t MTF_UART_Receive(MTF_HandleDef *huart, uint8_t *pData, size_t Size)
 
     if (_uart_thread_start == 0)
         return 0;
-
+#ifndef __EMSCRIPTEN__
     return fifo_get(uart_rec_fifo, pData, (unsigned int)Size);
+#else
+    return 1;
+#endif
 }
 
 uint8_t MTF_UART_Receive_FIFO_Count(MTF_HandleDef *huart)
 {
     if (_uart_thread_start == 0)
         return 0;
-        
+#ifndef __EMSCRIPTEN__        
     return (uint8_t)fifo_len(uart_rec_fifo);
+#else
+    return 1;
+#endif
 }
 
 uint8_t MTF_UART_Transmit_Empty(MTF_HandleDef *huart)
